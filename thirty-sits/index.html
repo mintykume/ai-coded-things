@@ -1,0 +1,502 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Thirty Sits</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Hanken+Grotesk:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one calm column. Counter, a 30-moon grid in week rows, the selected day's log, then the slow evidence: calm chart, then-and-now, weekly notes. */
+:root{
+  --bg:#f2f0f7; --surface:#fbfaff; --ink:#1d1a2e; --muted:#676181; --line:#dbd6ea;
+  --accent:#5640c4; --accent-soft:#e7e1fb; --empty:#e5e1ef; --ok:#2f8f7a;
+  --opal: conic-gradient(from 210deg, #86ddd2, #b5a3ff, #f2b2d3, #efdba0, #86ddd2);
+  --font-display:"Cormorant Garamond","Iowan Old Style",Georgia,serif;
+  --font-body:"Hanken Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f0d1a; --surface:#18152a; --ink:#ece8fb; --muted:#9d96bb; --line:#2d2945;
+    --accent:#b6a6ff; --accent-soft:#2a2452; --empty:#231f37; --ok:#7fd8c2; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f0d1a; --surface:#18152a; --ink:#ece8fb; --muted:#9d96bb; --line:#2d2945;
+  --accent:#b6a6ff; --accent-soft:#2a2452; --empty:#231f37; --ok:#7fd8c2; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 56px}
+.wrap{max-width:680px;margin:0 auto;display:flex;flex-direction:column;gap:36px}
+h1,h2{font-family:var(--font-display);font-weight:600;text-wrap:balance;margin:0;letter-spacing:.005em}
+h1{font-size:clamp(2.4rem,7vw,3.2rem);line-height:1}
+h2{font-size:1.7rem;line-height:1.1}
+.label{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+p{margin:0}
+.muted{color:var(--muted)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* header */
+header{display:flex;flex-direction:column;gap:14px}
+.counter{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.counter .big{font-family:var(--font-display);font-size:4.2rem;line-height:.9;font-weight:500;font-variant-numeric:tabular-nums}
+.counter .of{font-family:var(--font-display);font-style:italic;font-size:1.5rem;color:var(--muted)}
+.stats{display:flex;flex-wrap:wrap;gap:8px 22px;font-variant-numeric:tabular-nums}
+.stat{display:flex;flex-direction:column}
+.stat b{font-size:1.15rem;font-weight:600}
+.startline{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:.9rem}
+.startline input{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:4px 8px}
+
+/* moon grid */
+.grid{display:grid;grid-template-columns:2.4rem repeat(7,minmax(0,1fr));gap:8px 6px;align-items:center}
+.wk{font-family:var(--font-mono);font-size:.7rem;color:var(--muted);letter-spacing:.06em}
+.moon{aspect-ratio:1;max-width:100%;width:100%;border-radius:50%;border:1.5px solid var(--line);background:var(--empty);
+  display:grid;place-items:center;cursor:pointer;font-family:var(--font-mono);font-size:.78rem;color:var(--muted);
+  transition:transform .15s ease;padding:0;position:relative}
+.moon:hover{transform:scale(1.06)}
+.moon.done{background:var(--opal);border-color:transparent;color:#1d1a2e;font-weight:500}
+.moon.missed{background:transparent;border-style:dashed}
+.moon.future{opacity:.45}
+.moon.today{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--accent)}
+.moon[aria-pressed="true"]{outline:2px solid var(--ink);outline-offset:3px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.82rem;color:var(--muted)}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:50%;vertical-align:-1px;margin-right:6px;border:1.5px solid var(--line)}
+.legend .l-done{background:var(--opal);border-color:transparent}
+.legend .l-miss{border-style:dashed}
+.legend .l-today{box-shadow:0 0 0 2px var(--accent);border-color:transparent;background:var(--empty)}
+
+/* day editor */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:18px}
+.panel-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.field{display:flex;flex-direction:column;gap:8px;min-width:0}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:520px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label{border:1px solid var(--line);border-radius:999px;padding:5px 12px;cursor:pointer;font-size:.88rem;background:var(--bg);user-select:none}
+.seg input:checked+label{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.seg input:focus-visible+label{outline:2px solid var(--accent);outline-offset:2px}
+.seg.num label{min-width:38px;text-align:center;font-variant-numeric:tabular-nums}
+.minutes{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.minutes input[type=number]{width:5.5rem;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-variant-numeric:tabular-nums}
+input[type=text],textarea{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
+textarea{min-height:70px;resize:vertical}
+.toggle{display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:500}
+.toggle input{width:20px;height:20px;accent-color:var(--accent)}
+.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{border:1px solid var(--accent);background:var(--accent);color:var(--surface);border-radius:999px;padding:9px 20px;font-weight:600;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--muted);border-color:var(--line);font-weight:500}
+.hint{font-size:.85rem;color:var(--muted)}
+
+/* chart */
+.chart-wrap{overflow-x:auto}
+svg text{font-family:var(--font-mono);font-size:11px;fill:var(--muted)}
+.lift{font-family:var(--font-display);font-size:1.35rem}
+
+/* then & now */
+table{border-collapse:collapse;width:100%}
+.tn-wrap{overflow-x:auto}
+.tn th{font-weight:500;text-align:left;padding:10px 8px 10px 0;vertical-align:middle}
+.tn td{padding:8px 4px;vertical-align:middle}
+.tn thead th{font-family:var(--font-mono);font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:400}
+.tn tbody tr{border-top:1px solid var(--line)}
+.tn .seg label{padding:3px 0;min-width:30px;font-size:.82rem}
+.delta{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+.delta.up{color:var(--ok)}
+
+/* weeks */
+.weeks{display:flex;flex-direction:column;gap:16px}
+.week{display:flex;flex-direction:column;gap:6px}
+
+.how{display:flex;flex-direction:column;gap:8px;font-size:.92rem;color:var(--muted);max-width:62ch}
+.how b{color:var(--ink);font-weight:600}
+
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);
+  background:var(--ink);color:var(--bg);padding:9px 18px;border-radius:999px;font-size:.9rem;z-index:20;max-width:calc(100% - 32px)}
+.notice{border:1px dashed var(--line);border-radius:12px;padding:10px 14px;font-size:.88rem;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="label">30-day meditation challenge</span>
+    <h1>Thirty Sits</h1>
+    <div class="counter" aria-live="polite"><span class="big" id="dayNum">10</span><span class="of">of thirty</span></div>
+    <div class="stats" id="stats"></div>
+    <div class="startline">
+      <label for="f-start" class="muted">I started on</label>
+      <input type="date" id="f-start" value="2026-10-12">
+    </div>
+    <p class="notice" id="dbNotice" hidden>Saving isn't available in this view, so entries last only until you close the page.</p>
+  </header>
+
+  <section aria-labelledby="h-grid" style="display:flex;flex-direction:column;gap:14px">
+    <h2 id="h-grid">The month</h2>
+    <div class="grid" id="grid"></div>
+    <div class="legend"><span><i class="l-done"></i>sat</span><span><i class="l-today"></i>today</span><span><i class="l-miss"></i>no entry</span></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-day">
+    <div class="panel-head">
+      <h2 id="h-day">Day 10</h2>
+      <span class="label" id="dayDate"></span>
+    </div>
+    <label class="toggle"><input type="checkbox" id="f-done"> I sat</label>
+    <div class="row2">
+      <div class="field">
+        <span class="label">Minutes</span>
+        <div class="minutes">
+          <input type="number" id="f-min" min="1" max="240" step="5" inputmode="numeric" aria-label="Minutes">
+          <div class="seg" id="minChips"></div>
+        </div>
+      </div>
+      <div class="field">
+        <span class="label">Kind of sit</span>
+        <div class="seg" id="styleSeg"></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field"><span class="label">Calm before · 1 to 5</span><div class="seg num" id="beforeSeg"></div></div>
+      <div class="field"><span class="label">Calm after · 1 to 5</span><div class="seg num" id="afterSeg"></div></div>
+    </div>
+    <div class="field">
+      <label class="label" for="f-note">One thing I noticed (optional)</label>
+      <input type="text" id="f-note" maxlength="200" placeholder="mind kept planning tomorrow; breath slowed after 15 min">
+    </div>
+    <div class="actions">
+      <button class="btn" id="saveBtn" type="button">Save day</button>
+      <button class="btn ghost" id="clearBtn" type="button">Clear day</button>
+      <span class="hint">Takes about 30 seconds. Past days can be filled in with just "I sat".</span>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-chart" style="display:flex;flex-direction:column;gap:12px">
+    <h2 id="h-chart">Calm, before and after</h2>
+    <p class="muted" id="liftText">Rate calm before and after a sit, and the lift shows up here.</p>
+    <div class="chart-wrap"><svg id="chart" viewBox="0 0 620 210" role="img" aria-label="Calm before and after each sit"></svg></div>
+    <div class="legend"><span><i style="background:var(--muted);border-color:transparent"></i>before</span><span><i style="background:var(--accent);border-color:transparent"></i>after</span></div>
+  </section>
+
+  <section aria-labelledby="h-tn" style="display:flex;flex-direction:column;gap:12px">
+    <h2 id="h-tn">Then and now</h2>
+    <p class="muted">Rate the left column for how you were when you started. Fill the right column on day 30, without looking back first. 1 is rarely, 5 is most days.</p>
+    <div class="tn-wrap"><table class="tn"><thead><tr><th>Most days, I…</th><th>At the start</th><th>Day 30</th><th>Change</th></tr></thead><tbody id="tnBody"></tbody></table></div>
+  </section>
+
+  <section aria-labelledby="h-weeks" style="display:flex;flex-direction:column;gap:12px">
+    <h2 id="h-weeks">Sunday notes</h2>
+    <p class="muted">Once a week, two or three sentences: what changed, what was hard, what you'll try next week. Saves when you click away.</p>
+    <div class="weeks" id="weeks"></div>
+  </section>
+
+  <section class="how" aria-label="How to use">
+    <span class="label">How to use it</span>
+    <p><b>Every sit:</b> tap the day, rate calm before and after, save. A note only when something stood out.</p>
+    <p><b>Every Sunday:</b> write the week's note. That's where change actually shows.</p>
+    <p><b>Day 30:</b> fill the right column of Then and now, then compare. Ask Claude for a recap. It can read this log.</p>
+  </section>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+(function(){
+  const DAYS = 30;
+  const STYLES = ["Breath","Body scan","Guided","Walking","Open","Other"];
+  const MARKERS = [
+    ["sleep","fall asleep easily"],
+    ["steady","stay steady when things go wrong"],
+    ["focus","stay with one task"],
+    ["kind","talk to myself kindly"],
+    ["body","feel relaxed in my body"]
+  ];
+  const startDefault = (() => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"); })();
+  const state = { start:startDefault, sits:{}, checks:{start:{}, end:{}}, weeks:{}, selected:null };
+  let db = null;
+  document.getElementById("f-start").value = state.start;
+
+  const $ = id => document.getElementById(id);
+  const pad = n => String(n).padStart(2,"0");
+  const parse = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
+  const iso = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+  const today = () => { const t = new Date(); return new Date(t.getFullYear(), t.getMonth(), t.getDate()); };
+  const dateOf = n => { const d = parse(state.start); d.setDate(d.getDate()+n-1); return d; };
+  const todayIndex = () => Math.round((today() - parse(state.start)) / 86400000) + 1;
+  const fmt = d => d.toLocaleDateString(undefined,{weekday:"short", day:"numeric", month:"short"});
+
+  function toast(msg){
+    const t = $("toast"); t.textContent = msg; t.hidden = false;
+    clearTimeout(toast._t); toast._t = setTimeout(()=>{ t.hidden = true; }, 2200);
+  }
+
+  /* ---------- builders ---------- */
+  function seg(container, name, values, labels){
+    container.innerHTML = "";
+    values.forEach((v,i)=>{
+      const id = name+"-"+String(v).replace(/\s+/g,"_");
+      const inp = document.createElement("input");
+      inp.type="radio"; inp.name=name; inp.id=id; inp.value=v;
+      const lab = document.createElement("label");
+      lab.htmlFor=id; lab.textContent = labels ? labels[i] : v;
+      container.append(inp, lab);
+    });
+  }
+  function radioVal(name){ const c = document.querySelector('input[name="'+name+'"]:checked'); return c ? c.value : null; }
+  function setRadio(name, v){
+    document.querySelectorAll('input[name="'+name+'"]').forEach(r=>{ r.checked = (v!=null && String(r.value)===String(v)); });
+  }
+
+  seg($("minChips"), "minchip", [10,20,30,45,60]);
+  seg($("styleSeg"), "style", STYLES);
+  seg($("beforeSeg"), "before", [1,2,3,4,5]);
+  seg($("afterSeg"), "after", [1,2,3,4,5]);
+  document.querySelectorAll('input[name="minchip"]').forEach(r=>r.addEventListener("change",()=>{ $("f-min").value = r.value; $("f-done").checked = true; }));
+  ["style","before","after"].forEach(n=>document.querySelectorAll('input[name="'+n+'"]').forEach(r=>r.addEventListener("change",()=>{ $("f-done").checked = true; })));
+  $("f-min").addEventListener("input",()=>{ setRadio("minchip", $("f-min").value); if($("f-min").value) $("f-done").checked = true; });
+
+  /* ---------- stats ---------- */
+  function renderStats(){
+    const ti = todayIndex();
+    $("dayNum").textContent = ti < 1 ? "0" : Math.min(ti, DAYS);
+    const done = Object.values(state.sits).filter(s=>s.done);
+    const mins = done.reduce((a,s)=>a+(Number(s.minutes)||0),0);
+    let streak = 0;
+    for (let n = Math.min(ti, DAYS); n >= 1; n--) {
+      const s = state.sits[n];
+      if (s && s.done) streak++;
+      else if (n === ti) continue; // today not logged yet doesn't break it
+      else break;
+    }
+    const rated = done.filter(s=>s.before && s.after);
+    const lift = rated.length ? rated.reduce((a,s)=>a+(s.after-s.before),0)/rated.length : null;
+    const items = [
+      [done.length+" / "+DAYS, "sits"],
+      [mins ? (mins>=120 ? (mins/60).toFixed(1)+" h" : mins+" min") : "0 min", "sat in total"],
+      [streak+(streak===1?" day":" days"), "current streak"],
+      [lift==null ? "–" : (lift>=0?"+":"")+lift.toFixed(1), "average calm lift"]
+    ];
+    $("stats").innerHTML = items.map(([v,l])=>'<div class="stat"><b>'+v+'</b><span class="label">'+l+'</span></div>').join("");
+  }
+
+  /* ---------- grid ---------- */
+  function renderGrid(){
+    const g = $("grid"); g.innerHTML = "";
+    const ti = todayIndex();
+    for (let w = 0; w < 5; w++){
+      const lab = document.createElement("span"); lab.className="wk"; lab.textContent = "W"+(w+1); g.append(lab);
+      for (let k = 1; k <= 7; k++){
+        const n = w*7 + k;
+        if (n > DAYS){ g.append(document.createElement("span")); continue; }
+        const b = document.createElement("button");
+        b.type="button"; b.className="moon"; b.textContent = n;
+        const s = state.sits[n];
+        if (s && s.done) b.classList.add("done");
+        else if (n < ti) b.classList.add("missed");
+        else if (n > ti) b.classList.add("future");
+        if (n === ti) b.classList.add("today");
+        b.setAttribute("aria-pressed", String(n === state.selected));
+        const d = dateOf(n);
+        b.setAttribute("aria-label", "Day "+n+", "+fmt(d)+(s && s.done ? ", sat"+(s.minutes?" "+s.minutes+" minutes":"") : ""));
+        b.addEventListener("click", ()=>{ state.selected = n; renderGrid(); fillEditor(); });
+        g.append(b);
+      }
+    }
+  }
+
+  /* ---------- editor ---------- */
+  function fillEditor(){
+    const n = state.selected; const s = state.sits[n] || {};
+    $("h-day").textContent = "Day "+n;
+    $("dayDate").textContent = fmt(dateOf(n));
+    $("f-done").checked = !!s.done;
+    $("f-min").value = s.minutes || "";
+    setRadio("minchip", s.minutes); setRadio("style", s.style);
+    setRadio("before", s.before); setRadio("after", s.after);
+    $("f-note").value = s.note || "";
+  }
+  async function saveDay(){
+    const n = state.selected;
+    const rec = {
+      day:n, date: iso(dateOf(n)), done: $("f-done").checked,
+      minutes: Number($("f-min").value) || null,
+      style: radioVal("style"),
+      before: radioVal("before") ? Number(radioVal("before")) : null,
+      after: radioVal("after") ? Number(radioVal("after")) : null,
+      note: $("f-note").value.trim() || null,
+      savedAt: new Date().toISOString()
+    };
+    if (!rec.done && !rec.minutes && !rec.before && !rec.after && !rec.note){ return clearDay(); }
+    rec.done = true;
+    state.sits[n] = rec; renderAll(false);
+    if (!db){ toast("Saved for this visit"); return; }
+    try { await db.collection("sits").doc("d"+pad(n)).set(rec); toast("Day "+n+" saved  (˘︶˘).｡*♡"); }
+    catch(e){ toast("Couldn't save day "+n+". Try again in a moment."); }
+  }
+  async function clearDay(){
+    const n = state.selected;
+    delete state.sits[n]; renderAll(true);
+    if (!db){ toast("Day "+n+" cleared"); return; }
+    try { await db.collection("sits").doc("d"+pad(n)).delete(); toast("Day "+n+" cleared"); }
+    catch(e){ toast("Couldn't clear day "+n+"."); }
+  }
+  $("saveBtn").addEventListener("click", saveDay);
+  $("clearBtn").addEventListener("click", clearDay);
+
+  /* ---------- chart ---------- */
+  function renderChart(){
+    const svg = $("chart");
+    const W=620,H=210,L=34,R=12,T=14,B=30;
+    const x = n => L + (n-1)*(W-L-R)/(DAYS-1);
+    const y = v => T + (5-v)*(H-T-B)/4;
+    let out = "";
+    for (let v=1; v<=5; v++){
+      out += '<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y(v)+'" y2="'+y(v)+'" stroke="var(--line)" stroke-width="1"/>';
+      out += '<text x="'+(L-10)+'" y="'+(y(v)+4)+'" text-anchor="end">'+v+'</text>';
+    }
+    [1,5,10,15,20,25,30].forEach(n=>{ out += '<text x="'+x(n)+'" y="'+(H-8)+'" text-anchor="middle">'+n+'</text>'; });
+    const rated = Object.values(state.sits).filter(s=>s.done && s.before && s.after).sort((a,b)=>a.day-b.day);
+    const line = (key,color,w) => rated.length>1 ? '<polyline fill="none" stroke="'+color+'" stroke-width="'+w+'" stroke-linejoin="round" stroke-linecap="round" points="'+rated.map(s=>x(s.day)+","+y(s[key])).join(" ")+'"/>' : "";
+    out += line("before","var(--muted)",1.5) + line("after","var(--accent)",2.5);
+    rated.forEach(s=>{
+      out += '<circle cx="'+x(s.day)+'" cy="'+y(s.before)+'" r="3.5" fill="var(--muted)"/>';
+      out += '<circle cx="'+x(s.day)+'" cy="'+y(s.after)+'" r="4.5" fill="var(--accent)" stroke="var(--bg)" stroke-width="1.5"/>';
+    });
+    if (!rated.length) out += '<text x="'+(W/2)+'" y="'+(H/2)+'" text-anchor="middle">no ratings yet  (・ω・)</text>';
+    svg.innerHTML = out;
+    if (rated.length){
+      const avg = k => rated.reduce((a,s)=>a+s[k],0)/rated.length;
+      const lift = avg("after")-avg("before");
+      const first = rated.slice(0, Math.min(5, rated.length)), last = rated.slice(-Math.min(5, rated.length));
+      const avgB = arr => arr.reduce((a,s)=>a+s.before,0)/arr.length;
+      let txt = '<span class="lift">'+(lift>=0?"+":"")+lift.toFixed(1)+'</span> average lift per sit, across '+rated.length+' rated '+(rated.length===1?"sit":"sits")+'.';
+      if (rated.length >= 8) txt += ' Your calm <i>before</i> sitting went from '+avgB(first).toFixed(1)+' (first five) to '+avgB(last).toFixed(1)+' (last five). That baseline is the slower change to watch.';
+      $("liftText").innerHTML = txt;
+    } else {
+      $("liftText").textContent = "Rate calm before and after a sit, and the lift shows up here.";
+    }
+  }
+
+  /* ---------- then & now ---------- */
+  function renderTN(){
+    const body = $("tnBody");
+    if (!body.childElementCount){
+      MARKERS.forEach(([k,label])=>{
+        const tr = document.createElement("tr");
+        tr.innerHTML = '<th scope="row">'+label+'</th><td><div class="seg num" id="tn-s-'+k+'"></div></td><td><div class="seg num" id="tn-e-'+k+'"></div></td><td class="delta" id="tn-d-'+k+'"></td>';
+        body.append(tr);
+        seg($("tn-s-"+k), "s_"+k, [1,2,3,4,5]);
+        seg($("tn-e-"+k), "e_"+k, [1,2,3,4,5]);
+        document.querySelectorAll('input[name="s_'+k+'"]').forEach(r=>r.addEventListener("change",()=>saveCheck("start",k,Number(r.value))));
+        document.querySelectorAll('input[name="e_'+k+'"]').forEach(r=>r.addEventListener("change",()=>saveCheck("end",k,Number(r.value))));
+      });
+    }
+    MARKERS.forEach(([k])=>{
+      const a = state.checks.start[k], b = state.checks.end[k];
+      setRadio("s_"+k, a); setRadio("e_"+k, b);
+      const d = $("tn-d-"+k);
+      if (a && b){ const diff = b-a; d.textContent = (diff>0?"+":"")+diff; d.className = "delta"+(diff>0?" up":""); }
+      else { d.textContent = "–"; d.className = "delta muted"; }
+    });
+  }
+  async function saveCheck(which, k, v){
+    state.checks[which] = Object.assign({}, state.checks[which], {[k]:v, savedAt:new Date().toISOString()});
+    renderTN();
+    if (!db) return;
+    try { await db.collection("checks").doc(which).set(state.checks[which]); }
+    catch(e){ toast("Couldn't save that rating."); }
+  }
+
+  /* ---------- weeks ---------- */
+  function renderWeeks(){
+    const box = $("weeks");
+    if (!box.childElementCount){
+      const names = ["Week 1 · days 1–7","Week 2 · days 8–14","Week 3 · days 15–21","Week 4 · days 22–28","Last days · 29–30"];
+      names.forEach((nm,i)=>{
+        const w = "w"+(i+1);
+        const div = document.createElement("div"); div.className="week";
+        div.innerHTML = '<label class="label" for="f-'+w+'">'+nm+'</label><textarea id="f-'+w+'" placeholder="What changed? What was hard? What will I try?"></textarea>';
+        box.append(div);
+        const ta = div.querySelector("textarea");
+        ta.addEventListener("blur", ()=>saveWeek(w, ta.value.trim()));
+      });
+    }
+    ["w1","w2","w3","w4","w5"].forEach(w=>{
+      const ta = $("f-"+w);
+      if (document.activeElement !== ta) ta.value = (state.weeks[w] && state.weeks[w].text) || "";
+    });
+  }
+  async function saveWeek(w, text){
+    const prev = (state.weeks[w] && state.weeks[w].text) || "";
+    if (text === prev) return;
+    state.weeks[w] = {text, savedAt:new Date().toISOString()};
+    if (!db){ toast("Note kept for this visit"); return; }
+    try { await db.collection("weeks").doc(w).set(state.weeks[w]); toast("Note saved"); }
+    catch(e){ toast("Couldn't save the note. Copy it somewhere safe."); }
+  }
+
+  /* ---------- start date ---------- */
+  $("f-start").addEventListener("change", async ()=>{
+    const v = $("f-start").value; if (!v) return;
+    state.start = v; renderAll(true);
+    if (!db) return;
+    try { await db.doc("meta/settings").set({start:v}); toast("Start date saved"); }
+    catch(e){ toast("Couldn't save the start date."); }
+  });
+
+  function renderAll(refillEditor){
+    const ti = todayIndex();
+    if (state.selected == null) state.selected = Math.min(Math.max(ti,1), DAYS);
+    renderStats(); renderGrid(); renderChart(); renderTN(); renderWeeks();
+    if (refillEditor) fillEditor();
+  }
+  renderAll(true);
+
+  /* ---------- browser storage (used outside claude.ai) ---------- */
+  function localDb(){
+    const KEY = "thirty-sits:v1"; let store = {};
+    try { localStorage.setItem(KEY+":test","1"); localStorage.removeItem(KEY+":test"); store = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; }
+    catch(e){ return null; }
+    const subs = [];
+    const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(store)); } catch(e){} subs.forEach(f => f()); };
+    const doc = p => ({
+      set: async d => { store[p] = JSON.parse(JSON.stringify(d)); persist(); },
+      delete: async () => { delete store[p]; persist(); },
+      onSnapshot: cb => { const f = () => cb({ exists: p in store, data: () => store[p] }); subs.push(f); f(); return () => {}; }
+    });
+    const collection = name => ({
+      doc: id => doc(name + "/" + id),
+      onSnapshot: cb => { const f = () => cb({ docs: Object.keys(store).filter(k => k.startsWith(name + "/")).map(k => ({ id: k.slice(name.length + 1), data: () => store[k] })) }); subs.push(f); f(); return () => {}; }
+    });
+    return { doc, collection };
+  }
+
+  /* ---------- storage ---------- */
+  (async function connect(){
+    try { db = window.claude && window.claude.use ? await window.claude.use("db") : localDb(); } catch(e){ db = localDb(); }
+    if (!db){ $("dbNotice").hidden = false; return; }
+    let first = true;
+    db.doc("meta/settings").onSnapshot(s=>{
+      if (s.exists && s.data().start && s.data().start !== state.start){
+        state.start = s.data().start; $("f-start").value = state.start;
+        state.selected = null; renderAll(true);
+      }
+    }, ()=>{});
+    db.collection("sits").onSnapshot(q=>{
+      const next = {};
+      q.docs.forEach(d=>{ const v = d.data(); if (v && v.day) next[v.day] = v; });
+      state.sits = next; renderAll(first); first = false;
+    }, ()=>{ $("dbNotice").hidden = false; });
+    db.collection("checks").onSnapshot(q=>{
+      const next = {start:{}, end:{}};
+      q.docs.forEach(d=>{ if (d.id==="start"||d.id==="end") next[d.id] = Object.assign({}, d.data()); });
+      state.checks = next; renderTN();
+    }, ()=>{});
+    db.collection("weeks").onSnapshot(q=>{
+      const next = {}; q.docs.forEach(d=>{ next[d.id] = d.data(); });
+      state.weeks = next; renderWeeks();
+    }, ()=>{});
+  })();
+})();
+</script>
+
+</body></html>
